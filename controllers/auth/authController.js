@@ -206,11 +206,6 @@ export const changePassword = async (req, res) => {
         if (!passwordMatch) {
             return res.status(401).json({ status: 401, message: "Incorrect old password" });
         }
-        // console.log('req user', req.user.email);
-        // console.log('req body', req.body.email);
-        if (req.user.email !== req.body.email) {
-            return res.status(401).json({ status: 401, message: "Unauthorized" });
-        }
         const saltRounds = 10;
         const hashedNewPassword = await bcrypt.hash(new_password, saltRounds);
         existingUser.password = hashedNewPassword;
