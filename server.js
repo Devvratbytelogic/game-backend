@@ -2,7 +2,7 @@ import './config/config.js';
 import express from 'express';
 import cors from 'cors';
 import { connectDb } from './config/connectdb.js';
-import router from './routes/auth/authRoutes.js';
+import router from './routes/routes.js';
 
 const app = express();
 const port = process.env.PORT;

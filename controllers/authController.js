@@ -1,5 +1,5 @@
-import authModels from '../../models/auth/authModels.js'
-import userOtpModel from '../../models/auth/userOtpModels.js';
+import authModels from '../models/authModels.js'
+import userOtpModel from '../models/userOtpModels.js';
 import bcrypt from 'bcrypt';
 import { SendOTP } from './otp.js';
 import jwt from "jsonwebtoken";
@@ -213,13 +213,5 @@ export const changePassword = async (req, res) => {
         res.status(200).json({ status: 200, message: "Password changed successfully" });
     } catch (error) {
         res.status(500).json({ status: 500, message: "Internal Server Error" });
-    }
-};
-export const getAllUsers = async (req, res) => {
-    try {
-        const allUsers = await authModels.find().select('-password -confirm_password');
-        res.status(200).json({ status: 200, data: allUsers });
-    } catch (error) {
-        res.status(500).json({ status: 500, message: error.message });
     }
 };
