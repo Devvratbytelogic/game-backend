@@ -3,6 +3,7 @@ import userOtpModel from '../models/userOtpModels.js';
 import bcrypt from 'bcrypt';
 import { SendOTP } from './otp.js';
 import jwt from "jsonwebtoken";
+import Counter from '../models/counterModel.js';
 
 
 export const signUp = async (req, res) => {
@@ -33,13 +34,20 @@ export const signUp = async (req, res) => {
         else if (req.body.password !== req.body.confirm_password) {
             return res.status(400).json({ status: 400, message: "Passwords do not match" });
         } else {
+            const sequenceDoc = await Counter.findOneAndUpdate(
+                { sequence_name: 'user_id' },
+                { $inc: { sequence_value: 1 } },
+                { new: true, upsert: true }
+            );
+            const profileImage = req.file ? req.file.path : null;
             const saltRounds = 10;
             const hashedPassword = await bcrypt.hash(req.body.password, saltRounds);
             const newUser = new authModels({
                 ...req.body,
                 password: hashedPassword,
                 confirm_password: hashedPassword,
-
+                id: sequenceDoc.sequence_value,
+                profileImage: profileImage,
             });
             const OTP = await SendOTP(req.body.email);
             const userOtp = new userOtpModel({
@@ -130,9 +138,10 @@ export const sendEmailOTP = async (req, res) => {
         if (!user) {
             return res.status(404).json({ status: 404, message: "User not found" });
         }
-        const OTP = await SendOTP(req.body.email);
+        const OTP = await SendOTP(email);
+        await userOtpModel.deleteOne({ email });
         const userOtp = new userOtpModel({
-            email: req.body.email,
+            email,
             otp: OTP
         });
         await userOtp.save();
@@ -142,6 +151,7 @@ export const sendEmailOTP = async (req, res) => {
         res.status(500).json({ status: 500, message: "Internal Server Error" });
     }
 };
+
 export const resetPassword = async (req, res) => {
     try {
         const { email, otp, new_password, confirm_new_password } = req.body;
@@ -212,6 +222,6 @@ export const changePassword = async (req, res) => {
         await existingUser.save();
         res.status(200).json({ status: 200, message: "Password changed successfully" });
     } catch (error) {
-        res.status(500).json({ status: 500, message: "Internal Server Error" });
+        res.status(500).json({ status: 500, message: error.message });
     }
 };

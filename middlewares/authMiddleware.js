@@ -1,35 +1,42 @@
-import jwt from 'jsonwebtoken';
+import jwt from "jsonwebtoken";
 import authModels from '../models/authModels.js';
 
 export const auth = async (req, res, next) => {
     try {
-        const { email } = req.body;
-        const token = req.get('Authorization').split('Bearer ')[1];
-        let decoded;
-
-        try {
-            decoded = jwt.verify(token, process.env.JWT_SECRET);
-        } catch (err) {
-            if (err.name === 'TokenExpiredError') {
-                return res.status(401).json({ status: 401, message: 'Token expired' });
-            }
-            return res.status(401).json({ status: 401, message: 'Invalid token' });
-        }
-
-        const user = await authModels.findById(decoded.userId);
-        const check_user = await authModels.findOne({ email });
-
-        if (!user) {
+        const authorization = await req.header('Authorization');
+        if (!authorization) {
             return res.status(401).json({ status: 401, message: "Unauthorized" });
         }
-
-        if (user._id.toString() !== check_user._id.toString()) {
-            return res.status(401).json({ status: 401, message: "Invalid token" });
+        const token = authorization.replace('Bearer', '').trim();
+        let isVerified
+        try {
+            isVerified = jwt.verify(token, process.env.JWT_SECRET)
+        } catch (error) {
+            return res.status(401).json({ status: 401, message: "Unauthorized: Invalid token" });
         }
-
-        req.user = user;
-        next();
+        const user = await authModels.findById(isVerified.userId)
+        if (!user || !user._id) {
+            return res.status(401).json({ status: 401, message: "Unauthorized" });
+        }
+        req.userId = user._id;
+        next()
     } catch (err) {
+        console.log('&&&',err);
         return res.status(500).json({ status: 500, message: err.message });
     }
 };
+
+
+// export const authorizeUser = async () => {
+
+//     try {
+//         const token = authorizationHeader.replace('Bearer', '').trim();
+//         const isVerified = jwt.verify(token, process.env.JWT_SECRET);
+//         if (user._id.toString() !== targetUserId) {
+//             return res.status(401).json({ status: 401, message:"Forbidden: You can only change your own password"});
+//         }
+//     } catch (err) {
+//         return res.status(500).json({ status: 500, message: err.message });
+//     }
+
+// };
