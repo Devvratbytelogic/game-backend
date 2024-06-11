@@ -10,8 +10,10 @@ const DB_URL = process.env.DB_URL;
 
 app.use(cors());
 connectDb(DB_URL);
-app.use(express.json());
-app.use('/api/auth', router);
+app.use(express.json())
+app.use(express.urlencoded({extended: true,}))
+app.use(express.static("public"))
+app.use('/api', router);
 
 app.listen(port, () => {
     console.log('Server running on port ' + port);

@@ -2,6 +2,7 @@ import express from 'express';
 import { changePassword, resendOTP, resetPassword, sendEmailOTP, signIn, signUp, verifyOTP } from '../controllers/authController.js';
 import { auth } from '../middlewares/authMiddleware.js';
 import { getAllUsers, getUserProfile, updateUserProfile } from '../controllers/userContoller.js';
+import { upload } from '../middlewares/multer.js';
 
 const router = express.Router();
 //  auth routes
@@ -16,7 +17,7 @@ router.post('/change-password', auth, changePassword);
 // users routes
 router.get('/all-users', auth, getAllUsers);
 router.get('/user-profile', auth, getUserProfile);
-router.put('/edit-profile', auth, updateUserProfile);
+router.put('/edit-profile', auth, upload.single("profileImage"),updateUserProfile);
 
 
 export default router;

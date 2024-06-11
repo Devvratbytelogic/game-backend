@@ -22,22 +22,26 @@ export const getUserProfile = async (req, res) => {
 
 export const updateUserProfile = async (req, res) => {
     try {
-        const user = new authModels(req.body);
-        const validationError = user.validateSync();
-        if (validationError) {
-            const errors = {};
-            for (const field in validationError.errors) {
-                errors[field] = validationError.errors[field].message;
-            }
-            return res.status(400).json({ status: 400, message: "Validation Error", ...errors });
-        }
-        if (!user) {
+        const userId = req.userId;
+        const { email, ...updateData } = req.body;
+        const existingUser = await authModels.findById(userId);
+        if (!existingUser) {
             return res.status(404).json({ status: 404, message: 'User not found' });
         }
-        Object.assign(user, req.body);
-        await user.save();
-        res.status(200).json({ status: 200, message: 'User profile updated successfully', data: user });
+        if (email && email !== existingUser.email) {
+            const emailExists = await authModels.findOne({ email: email });
+            if (emailExists) {
+                return res.status(400).json({ status: 400, message: 'Email already exists' });
+            }
+            existingUser.email = email;
+        }
+        if (req.file) {
+            existingUser.profileImage = req.file.path;
+        }
+        Object.assign(existingUser, updateData);
+        await existingUser.save();
+        res.status(200).json({ status: 200, message: 'User profile updated successfully', data: existingUser });
     } catch (err) {
         res.status(500).json({ status: 500, message: err.message });
     }
-}
+};
