@@ -14,7 +14,12 @@ export const getUserProfile = async (req, res) => {
         if (!user) {
             return res.status(404).json({ status: 404, message: 'User not found' });
         }
-        res.status(200).json({ status: 200, data: user });
+
+        // Construct full URL for the profile image
+        const profileImageUrl = user.profileImage ? `${req.protocol}://${req.get('host')}${user.profileImage}` : null;
+        const userData = { ...user.toObject(), profileImage: profileImageUrl };
+
+        res.status(200).json({ status: 200, data: userData });
     } catch (err) {
         res.status(500).json({ status: 500, message: err.message });
     }
@@ -36,11 +41,14 @@ export const updateUserProfile = async (req, res) => {
             existingUser.email = email;
         }
         if (req.file) {
-            existingUser.profileImage = req.file.path;
+            existingUser.profileImage = `/public/images/${req.file.filename}`;
         }
         Object.assign(existingUser, updateData);
         await existingUser.save();
-        res.status(200).json({ status: 200, message: 'User profile updated successfully', data: existingUser });
+
+        const profileImageUrl = `${req.protocol}://${req.get('host')}${existingUser.profileImage}`;
+        
+        res.status(200).json({ status: 200, message: 'User profile updated successfully', data: { ...existingUser.toObject(), profileImage: profileImageUrl } });
     } catch (err) {
         res.status(500).json({ status: 500, message: err.message });
     }
